@@ -1,0 +1,52 @@
+version: "3"
+services:
+
+  php:
+    build: ./php
+    volumes:
+      - ./webapp/:/usr/share/nginx/html
+      - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    working_dir: /usr/share/nginx/html
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/html:/usr/share/nginx/html
+    ports: 
+      - 80:80
+    depends_on:
+      - php
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: sandbox
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+      TZ: 'Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db-store:/var/lib/mysql
+      - ./db/conf.d:/etc/mysql/conf.d
+      - ./db/initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=db
+      - PMA_USER=docker
+      - PMA_PASSWORD=docker
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+
+volumes:
+  db-store:
